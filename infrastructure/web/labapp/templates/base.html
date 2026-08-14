@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cybersecurity Training Lab</title>
+  <style>
+    :root { color-scheme: light; font-family: Arial, sans-serif; }
+    body { margin: 0; background: #f7f7f5; color: #1b1f23; }
+    header { background: #102a43; color: white; padding: 16px 24px; }
+    nav a { color: white; margin-right: 14px; text-decoration: none; font-weight: 600; }
+    main { max-width: 980px; margin: 0 auto; padding: 24px; }
+    table { border-collapse: collapse; width: 100%; background: white; }
+    th, td { border: 1px solid #d7dce2; padding: 8px; text-align: left; }
+    th { background: #eef2f5; }
+    input, button { padding: 8px; margin: 4px 0; }
+    code, pre { background: #eef2f5; padding: 2px 4px; }
+    .warning { border-left: 4px solid #b42318; background: #fff4f2; padding: 12px; }
+    .metric { display: inline-block; padding: 12px; background: white; border: 1px solid #d7dce2; margin-right: 8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cybersecurity Training Lab</h1>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/products">Products</a>
+      <a href="/comments">Comments</a>
+      <a href="/upload">Upload</a>
+      <a href="/login">Login</a>
+      <a href="/logout">Logout</a>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
+

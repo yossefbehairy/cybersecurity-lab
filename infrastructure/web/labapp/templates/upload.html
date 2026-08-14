@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Evidence Upload</h2>
+{% if message %}<p>{{ message }}</p>{% endif %}
+<form method="post" enctype="multipart/form-data">
+  <input name="file" type="file">
+  <button type="submit">Upload</button>
+</form>
+{% endblock %}
+

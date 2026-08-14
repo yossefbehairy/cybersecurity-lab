@@ -1,0 +1,11 @@
+.env
+.git
+.github
+.pytest_cache
+tests
+docs
+labs
+challenges
+evidence
+*.log
+

@@ -1,0 +1,127 @@
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: cyberlab-database
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cyberlab}
+      POSTGRES_USER: ${POSTGRES_USER:-cyberlab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - backend_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cyberlab} -d ${POSTGRES_DB:-cyberlab}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+
+  logging:
+    build:
+      context: ./infrastructure/web
+    container_name: cyberlab-logging
+    command: ["python", "-m", "labapp.logger"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://cyberlab:change-me-local-only@database:5432/cyberlab}
+      LAB_ENV: local-training-only
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8082:8082"
+    networks:
+      - access_net
+      - backend_net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8082/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  web:
+    build:
+      context: ./infrastructure/web
+    container_name: cyberlab-web
+    command: ["python", "-m", "labapp.web"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://cyberlab:change-me-local-only@database:5432/cyberlab}
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:-change-me-local-lab-secret}
+      LOGGING_URL: ${LOGGING_URL:-http://logging:8082/events}
+      LAB_ENV: local-training-only
+    depends_on:
+      database:
+        condition: service_healthy
+      logging:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - web_uploads:/app/uploads
+    networks:
+      - access_net
+      - lab_net
+      - backend_net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  analyst-tools:
+    build:
+      context: ./infrastructure/analyst-tools
+    container_name: cyberlab-analyst-tools
+    command: ["sh", "-c", "sleep infinity"]
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - lab_net
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /home/analyst
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+networks:
+  access_net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: "127.0.0.1"
+  lab_net:
+    driver: bridge
+    internal: true
+  backend_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  db_data:
+  web_uploads:

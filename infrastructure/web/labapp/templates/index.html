@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="warning">
+  <strong>Local training only.</strong> This application is intentionally vulnerable and must not be exposed to the internet.
+</section>
+<h2>Enterprise Scenario</h2>
+<p>Acme Supply runs a small internal ordering portal. Students investigate suspicious activity, identify vulnerable code paths, collect evidence, and propose remediation.</p>
+<h2>Starting Points</h2>
+<ul>
+  <li><a href="/products">Product search</a> for SQL injection investigation.</li>
+  <li><a href="/comments">Comments</a> for stored XSS investigation.</li>
+  <li><a href="/profile/1">Profiles</a> for IDOR investigation.</li>
+  <li><a href="/admin/audit">Audit records</a> for weak authorization investigation.</li>
+</ul>
+{% endblock %}
+

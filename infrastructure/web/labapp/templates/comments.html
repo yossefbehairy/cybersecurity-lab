@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Customer Comments</h2>
+<form method="post">
+  <input name="author" placeholder="Author">
+  <input name="body" placeholder="Comment body">
+  <button type="submit">Post</button>
+</form>
+<table>
+  <tr><th>Author</th><th>Body</th><th>Created</th></tr>
+  {% for row in rows %}
+  <tr><td>{{ row.author }}</td><td>{{ row.body|safe }}</td><td>{{ row.created_at }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}
+

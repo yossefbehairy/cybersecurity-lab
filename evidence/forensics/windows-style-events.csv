@@ -1,0 +1,3 @@
+timestamp,host,event_id,account,message
+2026-01-15T09:02:03Z,ACME-WEB-01,4625,alice,An account failed to log on
+2026-01-15T09:02:16Z,ACME-WEB-01,4624,alice,An account was successfully logged on
