@@ -1,6 +1,9 @@
 from pathlib import Path
 import re
+import shutil
 import subprocess
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,7 +53,18 @@ def test_no_elastic_kibana_wazuh_in_v1_compose():
     assert "5601" not in compose
 
 
+@pytest.mark.skipif(
+    shutil.which("docker") is None,
+    reason="Docker binary not found; skipping live compose-config validation",
+)
 def test_docker_compose_config_when_docker_available():
+    """Validate docker-compose.yml is syntactically valid.
+
+    Bug fix: previously this test ran unconditionally and failed in any
+    environment where the Docker daemon was absent (e.g. static-only CI),
+    making the entire test suite report failures unrelated to the code
+    under test.  Now it is skipped when docker is not on PATH.
+    """
     result = subprocess.run(
         ["docker", "compose", "config", "--quiet"],
         cwd=ROOT,

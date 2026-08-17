@@ -7,7 +7,13 @@ function Fail($Message) {
 docker compose ps *> $null
 if ($LASTEXITCODE -ne 0) { Fail "docker compose project is not available" }
 
-docker compose exec -T database pg_isready -U $env:POSTGRES_USER -d $env:POSTGRES_DB *> $null
+# Bug fix: $env:POSTGRES_USER and $env:POSTGRES_DB may be unset if .env
+# has not been sourced into the current shell.  Fall back to the same
+# defaults used in docker-compose.yml and health-check.sh.
+$pgUser = if ($env:POSTGRES_USER) { $env:POSTGRES_USER } else { "cyberlab" }
+$pgDb   = if ($env:POSTGRES_DB)   { $env:POSTGRES_DB }   else { "cyberlab" }
+
+docker compose exec -T database pg_isready -U $pgUser -d $pgDb *> $null
 if ($LASTEXITCODE -ne 0) {
     docker compose exec -T database pg_isready -U cyberlab -d cyberlab *> $null
     if ($LASTEXITCODE -ne 0) { Fail "database is not ready" }

@@ -1,5 +1,6 @@
 import os
 import shutil
+import threading
 from pathlib import Path
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
@@ -11,15 +12,27 @@ from .events import emit_event
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-me-local-lab-secret")
 UPLOAD_DIR = Path("/app/uploads")
-BOOTSTRAPPED = False
+_BOOTSTRAPPED = False
+_BOOTSTRAP_LOCK = threading.Lock()
 
 
 def bootstrap_once():
-    global BOOTSTRAPPED
-    if not BOOTSTRAPPED:
-        initialize()
-        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-        BOOTSTRAPPED = True
+    """Initialise the database and uploads directory exactly once.
+
+    Bug fix: the original implementation used a plain boolean flag with no
+    locking, so concurrent first requests could race through the guard and
+    call initialize() (which calls TRUNCATE + seed) multiple times.
+    Using double-checked locking makes this safe under gunicorn with
+    multiple threads.
+    """
+    global _BOOTSTRAPPED
+    if _BOOTSTRAPPED:
+        return
+    with _BOOTSTRAP_LOCK:
+        if not _BOOTSTRAPPED:   # double-checked locking
+            initialize()
+            UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+            _BOOTSTRAPPED = True
 
 
 def clear_uploads():
@@ -112,6 +125,13 @@ def comments():
     if request.method == "POST":
         author = request.form.get("author", "anonymous")[:40]
         body = request.form.get("body", "")
+        # INTENTIONAL TRAINING BEHAVIOR — do not reorder for "security".
+        # The INSERT happens before the pattern check so that students can:
+        #   1. Submit an XSS payload,
+        #   2. See it persist and render (via |safe in comments.html),
+        #   3. Observe the delayed SIEM alert, and
+        #   4. Understand why event-driven detection alone is insufficient.
+        # The original code checked *after* insert — preserved intentionally.
         execute("INSERT INTO comments (author, body) VALUES (%s, %s)", (author, body))
         if "<script" in body.lower() or "onerror" in body.lower():
             emit_event("web.xss.pattern", "high", "Stored XSS-like comment submitted", username=author, raw={"body": body[:200]})
